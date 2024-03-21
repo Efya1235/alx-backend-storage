@@ -1,17 +1,21 @@
--- This script ranks all bands by their lifespan that have Glam rock as their primary style.
--- Create a temporary table to store the bands' lifespan
-CREATE TEMPORARY TABLE IF NOT EXISTS bands_lifespan (
-    band_name VARCHAR(255),
-    lifespan INT
-);
+-- a SQL script that lists all bands with Glam rock as their main style, ranked by their longevity
+-- create a function that handles null values in the split column
 
-INSERT INTO bands_lifespan (band_name, lifespan)
-SELECT band_name,
-       EXTRACT(YEAR FROM MAX(split)::DATE) - EXTRACT(YEAR FROM MIN(formed)::DATE) AS lifespan
+DROP FUNCTION IF EXISTS lifespan;
+
+DELIMITER //
+CREATE FUNCTION lifespan(formed INTEGER, split INTEGER)
+    RETURNS INTEGER DETERMINISTIC
+BEGIN
+    IF split IS NULL THEN
+        RETURN 2022 - formed;
+    ELSE
+        RETURN split - formed;
+    END IF;
+END//
+DELIMITER ;
+
+SELECT band_name, lifespan(formed, split) AS lifespan
 FROM metal_bands
-WHERE main_style = 'Glam rock'
-GROUP BY band_name;
-
-SELECT band_name, lifespan
-FROM bands_lifespan
+WHERE style LIKE '%Glam rock%'
 ORDER BY lifespan DESC;
